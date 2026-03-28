@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------------------------------
-ATELIER PRA/PCA
+🎯 ATELIER RENDER
 ------------------------------------------------------------------------------------------------------
 L’idée en 30 secondes : Dans cet atelier, vous allez construire une **chaîne DevOps complète de bout en bout**. À partir d’une **application Flask**, vous allez **créer une image Docker**, la publier dans un registre, puis **automatiser son déploiement dans le cloud** avec **GitHub Actions** et utiliser **Terraform pour créer un service Render**. L’objectif est de comprendre comment passer du code à une application accessible en ligne, de manière industrielle, reproductible et sans intervention manuelle. À la fin, chacun de vous aura sa propre application déployée en production.
   
@@ -7,132 +7,62 @@ L’idée en 30 secondes : Dans cet atelier, vous allez construire une **chaîne
 <img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/e06361ad-18fd-403f-b642-d021d2a46f62" />
 
 -------------------------------------------------------------------------------------------------------
-Séquence 1 : Codespace de Github
+🧩 Séquence 1 : Github
 -------------------------------------------------------------------------------------------------------
-Objectif : Création d'un Codespace Github  
+Objectif : Forker le projet  
 Difficulté : Très facile (~5 minutes)
 -------------------------------------------------------------------------------------------------------
 **Faites un Fork de ce projet**. Si besoin, voici une vidéo d'accompagnement pour vous aider à "Forker" un Repository Github : [Forker ce projet](https://youtu.be/p33-7XQ29zQ) 
-  
-Ensuite depuis l'onglet **[CODE]** de votre nouveau Repository, **ouvrez un Codespace Github**.
-  
+   
 ---------------------------------------------------
-Séquence 2 : Création du votre environnement de travail
+🧩 Séquence 2 : Création d'un compte Render
 ---------------------------------------------------
-Objectif : Créer votre environnement de travail  
-Difficulté : Simple (~10 minutes)
+Objectif : Créer un hébergement sur Render  
+Difficulté : Faible (~10 minutes)
 ---------------------------------------------------
-Vous allez dans cette séquence mettre en place un cluster Kubernetes K3d contenant un master et 2 workers, installer les logiciels Packer et Ansible. Depuis le terminal de votre Codespace copier/coller les codes ci-dessous étape par étape :  
 
-**Création du cluster K3d**  
-```
-curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
-```
-```
-k3d cluster create pra \
-  --servers 1 \
-  --agents 2
-```
-**vérification de la création de votre cluster Kubernetes**  
-```
-kubectl get nodes
-```
-**Installation du logiciel Packer (création d'images Docker)**  
-```
-PACKER_VERSION=1.11.2
-curl -fsSL -o /tmp/packer.zip \
-  "https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_amd64.zip"
-sudo unzip -o /tmp/packer.zip -d /usr/local/bin
-rm -f /tmp/packer.zip
-```
-**Installation du logiciel Ansible**  
-```
-python3 -m pip install --user ansible kubernetes PyYAML jinja2
-export PATH="$HOME/.local/bin:$PATH"
-ansible-galaxy collection install kubernetes.core
-```
+Rendez-vous sur **https://render.com** et créez vous un compte.  
   
+---------------------------------------------------------------------------------------------
+🧩 Séquence 3 : Les Actions GitHUB (Industrialisation Continue)
+---------------------------------------------------------------------------------------------
+Objectif : Automatiser la mise à jour de vos Web Service Render  
+Difficulté : Moyenne (~15 minutes)
+---------------------------------------------------------------------------------------------
+Dans le Repository GitHUB que vous venez de créer précédemment lors de la séquence 1, vous avez un fichier intitulé **deploy.yml** et qui est déposé dans le répertoire .github/workflows. Ce fichier a pour objectif d'automatiser le déploiement de votre code sur votre site Render. Pour information, c'est ce que l'on appel des Actions GitHUB. Ce sont des scripts qui s'exécutent automatiquement lors de chaque Commit dans votre projet (C'est à dire à chaque modification de votre code). Ces scripts (appelés actions) sont au format yml qui est un format structuré proche de celui d'XML.  
+
+Pour utiliser cette Action (deploy.yml), **vous avez besoin de créer des secrets dans GitHUB** afin de ne pas divulguer des informations sensibles aux internautes de passage dans votre Repository comme vos login et password par exemple.  
+
+Pour cet atelier, **vous avez 2 secrets à créer** dans votre Repository GitHUB : **Settings → Secrets and variables → Actions → New repository secret**  
+  
+**RENDER_API_KEY** = API KEY à créer depuis Render : **Acount setting (en haut à droite)  → API Keys → Create API Key**   
+**RENDER_OWNER_ID** = Que vous trouverez dans votre Workspace settings Render (en haut à gauche), ex d'ID : tea-d6jcjo7kijhs739elfd0.   
+  
+**Dernière étape :** Pour engager l'automatisation de votre première Action, vous devez cliquer sur le gros boutton vert dans l'onglet supérieur [Actions] dans votre Repository Github. Le boutton s'intitule [I understand my workflows, go ahead and enable them].   
+
+Notions acquises de cette séquence :  
+Vous avez vu dans cette séquence comment créer des secrets GiHUB afin de mettre en place de l'industrialisation continue.   
+
 ---------------------------------------------------
-Séquence 3 : Déploiement de l'infrastructure
+🗺️ Séquence 4 : Mise en service
 ---------------------------------------------------
-Objectif : Déployer l'infrastructure sur le cluster Kubernetes
-Difficulté : Facile (~15 minutes)
----------------------------------------------------  
-Nous allons à présent déployer notre infrastructure sur Kubernetes. C'est à dire, créér l'image Docker de notre application Flask avec Packer, déposer l'image dans le cluster Kubernetes et enfin déployer l'infratructure avec Ansible (Création du pod, création des PVC et les scripts des sauvegardes aututomatiques).  
+Objectif : Déployer votre service web Render  
+Difficulté : Faible (~10 minutes)
+---------------------------------------------------
+Procédez à la modification de ce README.md (ex: Mon NOM Prénom ici) et Commitez. La création du Service Web Render est automatique.  
 
-**Création de l'image Docker avec Packer**  
-```
-packer init .
-packer build -var "image_tag=1.0" .
-docker images | head
-```
-  
-**Import de l'image Docker dans le cluster Kubernetes**  
-```
-k3d image import pra/flask-sqlite:1.0 -c pra
-```
-  
-**Déploiment de l'infrastructure dans Kubernetes**  
-```
-ansible-playbook ansible/playbook.yml
-```
-  
-**Forward du port 8080 qui est le port d'exposition de votre application Flask**  
-```
-kubectl -n pra port-forward svc/flask 8080:80 >/tmp/web.log 2>&1 &
-```
-  
----------------------------------------------------  
-**Réccupération de l'URL de votre application Flask**. Votre application Flask est déployée sur le cluster K3d. Pour obtenir votre URL cliquez sur l'onglet **[PORTS]** dans votre Codespace (à coté de Terminal) et rendez public votre port 8080 (Visibilité du port). Ouvrez l'URL dans votre navigateur et c'est terminé.  
+<img width="2150" height="616" alt="image" src="https://github.com/user-attachments/assets/7254a9c4-1bc7-4338-b25e-cad8259d396b" />  
 
-**Les routes** à votre disposition sont les suivantes :  
-1. https://...**/** affichera dans votre navigateur "Bonjour tout le monde !".
-2. https://...**/health** pour voir l'état de santé de votre application.
-3. https://...**/add?message=test** pour ajouter un message dans votre base de données SQLite.
-4. https://...**/count** pour afficher le nombre de messages stockés dans votre base de données SQLite.
-5. https://...**/consultation** pour afficher les messages stockés dans votre base de données.
+Vous pouvez cliquez sur votre URL est observez le résultat.  
   
----------------------------------------------------  
-### Processus de sauvegarde de la BDD SQLite
+<img width="2048" height="224" alt="image" src="https://github.com/user-attachments/assets/fd03a614-93b6-4416-869c-f8a737b272e2" />
 
-Grâce à une tâche CRON déployée par Ansible sur le cluster Kubernetes (un CronJob), toutes les minutes une sauvegarde de la BDD SQLite est faite depuis le PVC pra-data vers le PCV pra-backup dans Kubernetes.  
+### Explication de votre environnement Render 
+* Une image Docker déposée dans GHCR (espace de stockage des images Docker de GitHUb) est utilisée par Render pour créer un Web Service, qui exécute alors un container et expose une application via une URL publique.
+* Il ne peut y avoir qu'un container par Web Service. Si vous souhaitez lancer plusieurs Docker, il faudra alors créer plusieurs Web Service.
+* Vous pouvez créer autant de Web Service que vous souhaitez mais le cumul d'utilisation autorisé pour le compte Free est de maximum 750h par mois. **Pensez à la fin de vos ateliers à mettre en pause vos Web Service**.  
 
-Pour visualiser les sauvegardes périodiques déposées dans le PVC pra-backup, coller les commandes suivantes dans votre terminal Codespace :  
 
-```
-kubectl -n pra run debug-backup \
-  --rm -it \
-  --image=alpine \
-  --overrides='
-{
-  "spec": {
-    "containers": [{
-      "name": "debug",
-      "image": "alpine",
-      "command": ["sh"],
-      "stdin": true,
-      "tty": true,
-      "volumeMounts": [{
-        "name": "backup",
-        "mountPath": "/backup"
-      }]
-    }],
-    "volumes": [{
-      "name": "backup",
-      "persistentVolumeClaim": {
-        "claimName": "pra-backup"
-      }
-    }]
-  }
-}'
-```
-```
-ls -lh /backup
-```
-**Pour sortir du cluster et revenir dans le terminal**
-```
-exit
-```
 
 ---------------------------------------------------
 Séquence 4 : 💥 Scénarios de crash possibles  
