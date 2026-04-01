@@ -15,7 +15,7 @@ Difficulté : Très facile (~5 minutes)
 **Faites un Fork de ce projet**. Si besoin, voici une vidéo d'accompagnement pour vous aider à "Forker" un Repository Github : [Forker ce projet](https://youtu.be/p33-7XQ29zQ) 
    
 ---------------------------------------------------
-🧩 Séquence 2 : Création d'un compte Render
+🧩 Séquence 2 : Création d'un compte Render 
 ---------------------------------------------------
 Objectif : Créer un hébergement sur Render  
 Difficulté : Faible (~10 minutes)
